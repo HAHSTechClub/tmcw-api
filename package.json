@@ -1,0 +1,24 @@
+{
+  "name": "tmcw-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HAHSTechClub/tmcw-api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HAHSTechClub/tmcw-api/issues"
+  },
+  "homepage": "https://github.com/HAHSTechClub/tmcw-api#readme",
+  "dependencies": {
+    "dotenv": "^16.4.4",
+    "express": "^4.18.2",
+    "googleapis": "^133.0.0"
+  }
+}
