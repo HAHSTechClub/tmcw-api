@@ -23,7 +23,7 @@ app.get("/submit", async (request, response) => {
     if (!codes.includes(users_code)) {
         response.json({
             status: "Incorrect",
-            message: "Incorrect code.",
+            message: "Sorry, your guess was incorrect. 😔",
         });
         return;
     }
@@ -41,8 +41,8 @@ app.get("/submit", async (request, response) => {
         )
     ) {
         response.json({
-            status: "duplicate",
-            message: "Sorry, someone has already guessed this code",
+            status: "Duplicate",
+            message: "Sorry, someone has already guessed this code. 🙃",
         });
         return;
     }
@@ -52,8 +52,12 @@ app.get("/submit", async (request, response) => {
     writeCodesAndWinners(currentSheetsData);
 
     response.json({
-        status: "success",
-        message: `Congratulations! You were the first person to guess this code. You have won ${currentSheetsData[code_index][3]}. As a bonus challenge, ${currentSheetsData[code_index][4]}!`,
+        status: "Success",
+        message: `Congratulations! You were the first person to guess this code. 🎉
+        
+        You have won ${currentSheetsData[code_index][3]}. 
+        
+        As a bonus challenge, ${currentSheetsData[code_index][4]}!`,
     });
 });
 
