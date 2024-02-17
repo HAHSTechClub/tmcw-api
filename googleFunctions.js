@@ -33,7 +33,7 @@ async function getSheetsData(
 }
 
 async function getCodesAndWinners() {
-    const sheet_data = await getSheetsData("C2:F11");
+    const sheet_data = await getSheetsData("C2:G11");
     return sheet_data;
 }
 
@@ -56,7 +56,7 @@ async function writeData(
 }
 
 async function writeCodesAndWinners(values) {
-    writeData(values, "C2:F11");
+    writeData(values, "C2:G11");
 }
 
 module.exports = {

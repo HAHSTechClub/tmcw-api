@@ -7,9 +7,10 @@ const {
 
 PORT = 3000;
 
-app.get("/", async (request, response) => {
+app.get("/submit", async (request, response) => {
     const users_code = request.query.code;
     const users_name = request.query.name;
+    const users_rollClass = request.query.rollClass;
 
     currentSheetsData = await getCodesAndWinners();
 
@@ -43,13 +44,32 @@ app.get("/", async (request, response) => {
     }
 
     currentSheetsData[code_index][1] = users_name;
-
+    currentSheetsData[code_index][2] = users_rollClass;
     writeCodesAndWinners(currentSheetsData);
 
     response.json({
         status: "success",
-        message: `Congratulations! You were the first person to guess this code. You have won ${currentSheetsData[code_index][2]}. As a bonus challenge, ${currentSheetsData[code_index][3]}!`,
+        message: `Congratulations! You were the first person to guess this code. You have won ${currentSheetsData[code_index][3]}. As a bonus challenge, ${currentSheetsData[code_index][4]}!`,
     });
+});
+
+app.get("/get-submitted-code-information", async (request, response) => {
+    const currentSheetsData = await getCodesAndWinners();
+    const submittedRows = currentSheetsData.filter(
+        (row) => !(row[1] == "" || row[1] == undefined)
+    );
+
+    const formattedData = submittedRows.map((row) => {
+        return {
+            code: row[0],
+            winner: row[1],
+            class: row[2],
+            prize: row[3],
+            challenge: row[4],
+        };
+    });
+
+    response.json(formattedData);
 });
 
 app.listen(PORT, () => console.log(`listening on port ${PORT}`));
