@@ -62,7 +62,7 @@ async function getGoldenTicketsSheet() {
 }
 
 async function writeGoldenTicketsSheet(values) {
-    writeData(values, "A2:G11");
+    writeData(values, "A2:H11");
 }
 
 async function getImageSubmissionSheet() {
@@ -87,7 +87,7 @@ async function saveImageDataToDrive(base64String) {
         uploadType: "media",
     };
 
-    image_data_url = await new Promise((resolve, reject) => {
+    image_data_id = await new Promise((resolve, reject) => {
         drive.files.create(
             {
                 resource: fileMetadata,
@@ -103,12 +103,34 @@ async function saveImageDataToDrive(base64String) {
                     reject(err);
                 }
 
-                resolve(file.data.webViewLink);
+                resolve(file.data.id);
             }
         );
     });
 
-    return image_data_url;
+    return image_data_id;
+}
+
+async function getImageDataFromDrive(id) {
+    const drive = google.drive({ version: "v3", auth: authClient });
+
+    image_data = await new Promise((resolve, reject) => {
+        drive.files.get(
+            {
+                fileId: id,
+                alt: "media", // Get file content as media
+            },
+            (err, res) => {
+                if (err) {
+                    reject(err);
+                }
+
+                resolve(res.data);
+            }
+        );
+    });
+
+    return image_data;
 }
 
 module.exports = {
@@ -117,4 +139,5 @@ module.exports = {
     getImageSubmissionSheet,
     writeImageSubmissionSheet,
     saveImageDataToDrive,
+    getImageDataFromDrive,
 };

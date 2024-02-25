@@ -21,6 +21,7 @@ const {
     getImageSubmissionSheet,
     writeImageSubmissionSheet,
     saveImageDataToDrive,
+    getImageDataFromDrive,
 } = require("./googleFunctions.js");
 
 PORT = 3000;
@@ -83,10 +84,10 @@ app.post("/submit-image", async (request, response) => {
 
     switch (users_code) {
         case "Chessboard":
-            golden_ticket_id = "10";
+            golden_ticket_id = "9";
             break;
         case "Triangle":
-            golden_ticket_id = "11";
+            golden_ticket_id = "10";
             break;
         default:
             response.status(400).send({
@@ -110,7 +111,7 @@ app.post("/submit-image", async (request, response) => {
         users_rollClass,
         image_data_url,
         formattedDate,
-        false,
+        "PENDING",
     ];
 
     submissionData.push(new_row);
@@ -124,7 +125,7 @@ app.post("/submit-image", async (request, response) => {
     });
 });
 
-app.get("/get-unverified-submissions", async (request, response) => {
+app.get("/get-pending-submissions", async (request, response) => {
     const userAdminCode = request.query.adminCode;
     const actualAdminCode = process.env.ADMIN_CODE;
 
@@ -138,31 +139,25 @@ app.get("/get-unverified-submissions", async (request, response) => {
 
     submissionData = submissionData == undefined ? [] : submissionData;
 
-    let verified_ids = [];
+    const pending_rows = submissionData.filter((row) => row[6] == "PENDING");
 
-    submissionData.forEach((row) => {
-        if (row[6] == "TRUE" && !verified_ids.includes(row[1])) {
-            verified_ids.push(row[1]);
-        }
-    });
+    const response_obj = await Promise.all(
+        pending_rows.map(async (row) => {
+            const image_id = row[4];
+            const image_data = await getImageDataFromDrive(image_id);
 
-    const unverified_rows = submissionData.filter(
-        (row) => !verified_ids.includes(row[1])
-    );
-
-    response.json(
-        unverified_rows.map((row) => {
             return {
                 id: row[0],
                 goldenTicketId: row[1],
                 name: row[2],
                 rollClass: row[3],
-                image: row[4],
+                image: image_data,
                 timestamp: row[5],
                 isAccepted: row[6],
             };
         })
     );
+    response.json(response_obj);
 });
 
 app.get("/verify-submission", async (request, response) => {
@@ -188,7 +183,51 @@ app.get("/verify-submission", async (request, response) => {
         return;
     }
 
-    submissionData[parseInt(id) - 1][6] = "TRUE";
+    const goldenTicketID = submissionData[parseInt(id) - 1][1];
+    const name = submissionData[parseInt(id) - 1][2];
+    const rollClass = submissionData[parseInt(id) - 1][3];
+
+    submissionData[parseInt(id) - 1][6] = "VERIFIED";
+
+    submissionData.forEach((row) => {
+        if (row[0] != id && row[1] == goldenTicketID) {
+            row[6] = "REJECTED";
+        }
+    });
+
+    const goldenTicketsData = await getGoldenTicketsSheet();
+    goldenTicketsData[goldenTicketID - 1][4] = name;
+    goldenTicketsData[goldenTicketID - 1][5] = rollClass;
+
+    await writeGoldenTicketsSheet(goldenTicketsData);
+    await writeImageSubmissionSheet(submissionData);
+    response.json({ status: "Success" });
+});
+
+app.get("/reject-submission", async (request, response) => {
+    const userAdminCode = request.query.adminCode;
+    const actualAdminCode = process.env.ADMIN_CODE;
+
+    if (userAdminCode != actualAdminCode) {
+        response.status(400).send({
+            message: "Incorrect Admin Code",
+        });
+        return;
+    }
+
+    let submissionData = await getImageSubmissionSheet();
+    submissionData = submissionData == undefined ? [] : submissionData;
+
+    const id = request.query.id;
+
+    if (!submissionData.map((row) => row[0]).includes(id)) {
+        response.status(400).send({
+            message: "Non-existent submission",
+        });
+        return;
+    }
+
+    submissionData[parseInt(id) - 1][6] = "REJECTED";
 
     await writeImageSubmissionSheet(submissionData);
     response.json({ status: "Success" });
