@@ -3,10 +3,17 @@ const cors = require("cors");
 const moment = require("moment-timezone");
 require("dotenv").config();
 const process = require("process");
+const rateLimit = require("express-rate-limit");
+
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 15 minutes
+    max: 10, // maximum of 100 requests within 15 minutes
+});
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+app.use(limiter);
 
 const {
     getGoldenTicketsSheet,
