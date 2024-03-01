@@ -134,7 +134,7 @@ app.post("/submit-image", async (request, response) => {
         users_rollClass,
         image_data_url,
         formattedDate,
-        "PENDING",
+        "UNVERIFIED",
     ];
 
     submissionData.push(new_row);
@@ -204,42 +204,45 @@ app.get("/verify-submission", async (request, response) => {
         return;
     }
 
-    const goldenTicketID = submissionData[parseInt(id) - 1][1];
+    if (submissionData[parseInt(id) - 1][6] == "VERIFIED") {
+        response.status(400).send({
+            message: "Submission already verified",
+        });
+        return;
+    }
+
+    const challengeName = submissionData[parseInt(id) - 1][1];
     const name = submissionData[parseInt(id) - 1][2];
     const rollClass = submissionData[parseInt(id) - 1][3];
 
     submissionData[parseInt(id) - 1][6] = "VERIFIED";
 
     submissionData.forEach((row) => {
-        if (row[0] != id && row[1] == goldenTicketID) {
-            row[6] = "REJECTED";
+        if (row[0] != id && row[1] == challengeName) {
+            row[6] = "UNVERIFIED";
         }
     });
 
     const goldenTicketsData = await getGoldenTicketsSheet();
-    goldenTicketsData[goldenTicketID - 1][4] = name;
-    goldenTicketsData[goldenTicketID - 1][5] = rollClass;
+    goldenTicketID = goldenTicketsData
+        .filter((a) => a[3] == "Image")
+        .find((a) => a[2] == challengeName)[0];
+
+    goldenTicketsData[goldenTicketID - 1][5] = name;
+    goldenTicketsData[goldenTicketID - 1][6] = rollClass;
 
     await writeGoldenTicketsSheet(goldenTicketsData);
     await writeImageSubmissionSheet(submissionData);
     response.json({ status: "Success" });
 });
 
-app.get("/set-submission-status", async (request, response) => {
-    const status = request.query.status;
+app.get("/unverify-submission", async (request, response) => {
     const userAdminCode = request.query.adminCode;
     const actualAdminCode = process.env.ADMIN_CODE;
 
     if (userAdminCode != actualAdminCode) {
         response.status(400).send({
             message: "Incorrect Admin Code",
-        });
-        return;
-    }
-
-    if (status != "PENDING" || status != "REJECTED") {
-        response.status(400).send({
-            message: "Invalid status",
         });
         return;
     }
@@ -256,27 +259,48 @@ app.get("/set-submission-status", async (request, response) => {
         return;
     }
 
-    submissionData[parseInt(id) - 1][6] = status;
+    if (submissionData[parseInt(id) - 1][6] == "UNVERIFIED") {
+        response.status(400).send({
+            message: "Submission already unverified",
+        });
+        return;
+    }
 
+    const challengeName = submissionData[parseInt(id) - 1][1];
+    const name = submissionData[parseInt(id) - 1][2];
+    const rollClass = submissionData[parseInt(id) - 1][3];
+
+    submissionData[parseInt(id) - 1][6] = "UNVERIFIED";
+
+    const goldenTicketsData = await getGoldenTicketsSheet();
+    goldenTicketID = goldenTicketsData
+        .filter((a) => a[3] == "Image")
+        .find((a) => a[2] == challengeName)[0];
+
+    goldenTicketsData[goldenTicketID - 1][5] = "";
+    goldenTicketsData[goldenTicketID - 1][6] = "";
+
+    await writeGoldenTicketsSheet(goldenTicketsData);
     await writeImageSubmissionSheet(submissionData);
     response.json({ status: "Success" });
 });
 
-app.get("/get-submitted-code-information", async (request, response) => {
+app.get("/get-submitted-submissions-data", async (request, response) => {
     const currentSheetsData = await getGoldenTicketsSheet();
     const submittedRows = currentSheetsData.filter(
-        (row) => !(row[4] == "" || row[4] == undefined)
+        (row) => !(row[5] == "" || row[5] == undefined)
     );
 
     const formattedData = submittedRows.map((row) => {
         return {
             id: row[0],
             challengeName: row[2],
-            solution: row[3],
-            winner: row[4],
-            rollClass: row[5],
-            prize: row[6],
-            challenge: row[7],
+            submissionType: row[3],
+            solution: row[4],
+            winner: row[5],
+            rollClass: row[6],
+            prize: row[7],
+            challenge: row[8],
         };
     });
 
