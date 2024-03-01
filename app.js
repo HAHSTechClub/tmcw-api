@@ -307,4 +307,13 @@ app.get("/get-submitted-submissions-data", async (request, response) => {
     response.json(formattedData);
 });
 
+app.get("/get-image-submissions-names", async (request, response) => {
+    const goldenTicketsSheet = await getGoldenTicketsSheet();
+    const imageSubmissionNames = goldenTicketsSheet
+        .filter((a) => a[3] == "Image")
+        .map((a) => a[2]);
+
+    response.json(imageSubmissionNames);
+});
+
 app.listen(PORT, () => console.log(`listening on port ${PORT}`));
