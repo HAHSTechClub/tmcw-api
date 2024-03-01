@@ -127,7 +127,7 @@ app.post("/submit-image", async (request, response) => {
     });
 });
 
-app.get("/get-pending-submissions", async (request, response) => {
+app.get("/get-submissions", async (request, response) => {
     const userAdminCode = request.query.adminCode;
     const actualAdminCode = process.env.ADMIN_CODE;
 
@@ -141,10 +141,8 @@ app.get("/get-pending-submissions", async (request, response) => {
 
     submissionData = submissionData == undefined ? [] : submissionData;
 
-    const pending_rows = submissionData.filter((row) => row[6] == "PENDING");
-
     const response_obj = await Promise.all(
-        pending_rows.map(async (row) => {
+        submissionData.map(async (row) => {
             const image_id = row[4];
             const image_data = await getImageDataFromDrive(image_id);
 
@@ -206,13 +204,21 @@ app.get("/verify-submission", async (request, response) => {
     response.json({ status: "Success" });
 });
 
-app.get("/reject-submission", async (request, response) => {
+app.get("/set-submission-status", async (request, response) => {
+    const status = request.query.status;
     const userAdminCode = request.query.adminCode;
     const actualAdminCode = process.env.ADMIN_CODE;
 
     if (userAdminCode != actualAdminCode) {
         response.status(400).send({
             message: "Incorrect Admin Code",
+        });
+        return;
+    }
+
+    if (status != "PENDING" || status != "REJECTED") {
+        response.status(400).send({
+            message: "Invalid status",
         });
         return;
     }
@@ -229,7 +235,7 @@ app.get("/reject-submission", async (request, response) => {
         return;
     }
 
-    submissionData[parseInt(id) - 1][6] = "REJECTED";
+    submissionData[parseInt(id) - 1][6] = status;
 
     await writeImageSubmissionSheet(submissionData);
     response.json({ status: "Success" });
