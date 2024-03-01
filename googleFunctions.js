@@ -57,12 +57,12 @@ async function writeData(
 }
 
 async function getGoldenTicketsSheet() {
-    const sheet_data = await getSheetsData("A2:H11");
+    const sheet_data = await getSheetsData("A2:I11");
     return sheet_data;
 }
 
 async function writeGoldenTicketsSheet(values) {
-    writeData(values, "A2:H11");
+    writeData(values, "A2:I11");
 }
 
 async function getImageSubmissionSheet() {

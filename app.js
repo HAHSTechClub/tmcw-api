@@ -28,14 +28,16 @@ const {
 
 PORT = 3000;
 
-app.get("/submit", async (request, response) => {
+app.get("/submit-code", async (request, response) => {
     const users_code = request.query.code;
     const users_name = request.query.name;
     const users_rollClass = request.query.rollClass;
 
     currentSheetsData = await getGoldenTicketsSheet();
 
-    const codes = currentSheetsData.map((a) => a[3]);
+    const codes = currentSheetsData
+        .filter((a) => a[3] == "Code")
+        .map((a) => a[4]);
 
     if (!codes.includes(users_code)) {
         response.json({
@@ -49,8 +51,8 @@ app.get("/submit", async (request, response) => {
 
     if (
         !(
-            currentSheetsData[code_index][4] == "" ||
-            currentSheetsData[code_index][4] == undefined
+            currentSheetsData[code_index][5] == "" ||
+            currentSheetsData[code_index][5] == undefined
         )
     ) {
         response.json({
@@ -60,43 +62,58 @@ app.get("/submit", async (request, response) => {
         return;
     }
 
-    currentSheetsData[code_index][4] = users_name;
-    currentSheetsData[code_index][5] = users_rollClass;
+    currentSheetsData[code_index][5] = users_name;
+    currentSheetsData[code_index][6] = users_rollClass;
     writeGoldenTicketsSheet(currentSheetsData);
 
     response.json({
         status: "Success",
         message: `Congratulations! You were the first person to guess this code. 🎉
         
-        You have won ${currentSheetsData[code_index][6]}. 
+        You have won ${currentSheetsData[code_index][7]}. 
         
-        As a bonus challenge, ${currentSheetsData[code_index][7]}!`,
+        As a bonus challenge, ${currentSheetsData[code_index][8]}!`,
     });
 });
 
 app.post("/submit-image", async (request, response) => {
     const users_name = request.query.name;
     const users_rollClass = request.query.rollClass;
-    const users_code = request.query.code;
+    const users_challengeName = request.query.challengeName;
     const users_image = request.body.image;
+
+    currentSheetsData = await getGoldenTicketsSheet();
+
+    const imageChallengeNames = currentSheetsData
+        .filter((a) => a[3] == "Image")
+        .map((a) => a[2]);
+
+    if (!imageChallengeNames.includes(users_challengeName)) {
+        response.json({
+            status: "Incorrect",
+            message: "This challenge does not exist. 😲",
+        });
+        return;
+    }
+
+    const challenge_index = imageChallengeNames.indexOf(users_challengeName);
+
+    if (
+        !(
+            currentSheetsData[challenge_index][5] == "" ||
+            currentSheetsData[challenge_index][5] == undefined
+        )
+    ) {
+        response.json({
+            status: "Duplicate",
+            message: "Sorry, someone has already solved this challenge. 🙃",
+        });
+        return;
+    }
 
     const image_data_url = await saveImageDataToDrive(users_image);
 
     let golden_ticket_id;
-
-    switch (users_code) {
-        case "Chessboard":
-            golden_ticket_id = "9";
-            break;
-        case "Triangle":
-            golden_ticket_id = "10";
-            break;
-        default:
-            response.status(400).send({
-                message: "Not image submission",
-            });
-            return;
-    }
 
     let submissionData = await getImageSubmissionSheet();
 
