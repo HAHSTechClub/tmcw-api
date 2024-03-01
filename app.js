@@ -35,9 +35,9 @@ app.get("/submit-code", async (request, response) => {
 
     currentSheetsData = await getGoldenTicketsSheet();
 
-    const codes = currentSheetsData
-        .filter((a) => a[3] == "Code")
-        .map((a) => a[4]);
+    const codeChallenges = currentSheetsData.filter((a) => a[3] == "Code");
+
+    const codes = codeChallenges.map((a) => a[4]);
 
     if (!codes.includes(users_code)) {
         response.json({
@@ -47,12 +47,14 @@ app.get("/submit-code", async (request, response) => {
         return;
     }
 
-    const code_index = codes.indexOf(users_code);
+    const challengeRow = codeChallenges.find((a) => a[4] == users_code);
+
+    const challengeIndex = challengeRow[0] - 1;
 
     if (
         !(
-            currentSheetsData[code_index][5] == "" ||
-            currentSheetsData[code_index][5] == undefined
+            currentSheetsData[challengeIndex][5] == "" ||
+            currentSheetsData[challengeIndex][5] == undefined
         )
     ) {
         response.json({
@@ -62,8 +64,8 @@ app.get("/submit-code", async (request, response) => {
         return;
     }
 
-    currentSheetsData[code_index][5] = users_name;
-    currentSheetsData[code_index][6] = users_rollClass;
+    currentSheetsData[challengeIndex][5] = users_name;
+    currentSheetsData[challengeIndex][6] = users_rollClass;
     writeGoldenTicketsSheet(currentSheetsData);
 
     response.json({
@@ -84,36 +86,38 @@ app.post("/submit-image", async (request, response) => {
 
     currentSheetsData = await getGoldenTicketsSheet();
 
-    const imageChallengeNames = currentSheetsData
-        .filter((a) => a[3] == "Image")
-        .map((a) => a[2]);
+    const imageChallenges = currentSheetsData.filter((a) => a[3] == "Image");
+
+    const imageChallengeNames = imageChallenges.map((a) => a[2]);
 
     if (!imageChallengeNames.includes(users_challengeName)) {
         response.json({
-            status: "Incorrect",
-            message: "This challenge does not exist. 😲",
+            status: "How have you done this???",
+            message: "This challenge does not exist.",
         });
         return;
     }
 
-    const challenge_index = imageChallengeNames.indexOf(users_challengeName);
+    const challengeRow = imageChallenges.find(
+        (a) => a[2] == users_challengeName
+    );
+
+    const challengeIndex = challengeRow[0] - 1;
 
     if (
         !(
-            currentSheetsData[challenge_index][5] == "" ||
-            currentSheetsData[challenge_index][5] == undefined
+            currentSheetsData[challengeIndex][5] == "" ||
+            currentSheetsData[challengeIndex][5] == undefined
         )
     ) {
         response.json({
             status: "Duplicate",
-            message: "Sorry, someone has already solved this challenge. 🙃",
+            message: "Sorry, someone has already solved this puzzle. 🙃",
         });
         return;
     }
 
     const image_data_url = await saveImageDataToDrive(users_image);
-
-    let golden_ticket_id;
 
     let submissionData = await getImageSubmissionSheet();
 
@@ -125,7 +129,7 @@ app.post("/submit-image", async (request, response) => {
 
     const new_row = [
         id,
-        golden_ticket_id,
+        users_challengeName,
         users_name,
         users_rollClass,
         image_data_url,
