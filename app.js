@@ -148,7 +148,7 @@ app.post("/submit-image", async (request, response) => {
     });
 });
 
-app.get("/get-submissions", async (request, response) => {
+app.get("/get-image-submissions", async (request, response) => {
     const userAdminCode = request.query.adminCode;
     const actualAdminCode = process.env.ADMIN_CODE;
 
@@ -169,7 +169,7 @@ app.get("/get-submissions", async (request, response) => {
 
             return {
                 id: row[0],
-                goldenTicketId: row[1],
+                challengeName: row[1],
                 name: row[2],
                 rollClass: row[3],
                 image: image_data,
