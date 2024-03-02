@@ -6,8 +6,8 @@ const process = require("process");
 const rateLimit = require("express-rate-limit");
 
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 15 minutes
-    max: 10, // maximum of 100 requests within 15 minutes
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 20, // maximum of 20 requests within 1 minute
     validate: { xForwardedForHeader: false },
 });
 
@@ -72,9 +72,9 @@ app.get("/submit-code", async (request, response) => {
         status: "Success",
         message: `Congratulations! You were the first person to guess this code. 🎉
         
-        You have won ${currentSheetsData[code_index][7]}. 
+        You have won ${currentSheetsData[challengeIndex][7]}. 
         
-        As a bonus challenge, ${currentSheetsData[code_index][8]}!`,
+        As a bonus challenge, ${currentSheetsData[challengeIndex][8]}!`,
     });
 });
 
